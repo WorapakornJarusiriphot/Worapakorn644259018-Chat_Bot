@@ -1,21 +1,24 @@
 from flask import Flask, request
+from dotenv import load_dotenv
+import os
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import (MessageEvent,
                             TextMessage,
                             TextSendMessage,
                             ImageMessage)
-import os
 import tempfile
 
-channel_secret = "bd64f7ffb48f1aada1527ee852c4fda0"
-channel_access_token = "RrewYzqHmm7KSmeVPPowpWx44BrF1ABUhMxaFvb2wwPlLf/Ct6M0w+mQpZBOkTt5RxwtW0jUmT97K1JTKn7vW968Qdgo3btfXw425HYFsaanXy/YcqXSRMePK8r4pdCi6b6GkoSNfTQz8guUo69iuAdB04t89/1O/w1cDnyilFU="
+line_bot_api = None
+handler = None
 
-line_bot_api = LineBotApi(channel_access_token)
-handler = WebhookHandler(channel_secret)
+def init(secret, token):
+    global line_bot_api, handler
+    line_bot_api = LineBotApi(token)
+    handler = WebhookHandler(secret)
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET","POST"])
+@app.route("/", methods=["GET", "POST"])
 def home():
     try:
         signature = request.headers["X-Line-Signature"]
@@ -23,28 +26,37 @@ def home():
         handler.handle(body, signature)
     except:
         pass
-    
+
     return "Hello Line Chatbot"
 
-@handler.add(MessageEvent, message=ImageMessage)
 def handle_image_message(event):
     message_content = line_bot_api.get_message_content(event.message.id)
     static_tmp_path = os.path.join(os.path.dirname(__file__),
-                                   'static', 'tmp').replace("\\","/")
+                                   'static', 'tmp').replace("\\", "/")
     print(static_tmp_path)
-    # jpg-xclkjfla --> jpg-xclkjfla.jpg
     with tempfile.NamedTemporaryFile(dir=static_tmp_path,
                                      prefix='jpg' + '-', delete=False) as tf:
         for chunk in message_content.iter_content():
             tf.write(chunk)
-        tempfile_path = tf.name # ไฟล์ภาพที่บันทึก จะมีแต่ชื่อไฟล์ ชื่อว่า jpg-xxxxxx ยังไม่มีนามสกุล
+        tempfile_path = tf.name
 
-    dist_path = tempfile_path + '.jpg'    # เติมนามสกุลเข้าไปในชื่อไฟล์เป็น jpg-xxxxxx.jpg
-    os.rename(tempfile_path, dist_path)   # เปลี่ยนชื่อไฟล์ภาพเดิมที่ยังไม่มีนามสกุลให้เป็น jpg-xxxxxx.jpg
+    dist_path = tempfile_path + '.jpg'
+    os.rename(tempfile_path, dist_path)
     
     text_out = "บันทึกรูปภาพเรียบร้อย"
-    line_bot_api.reply_message(event.reply_token,TextSendMessage(text=text_out))
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_out))
 
-if __name__ == "__main__":          
+def setup_handler():
+    handler.add(MessageEvent, message=TextMessage)(handle_text_message)
+    handler.add(MessageEvent, message=ImageMessage)(handle_image_message)
+
+if __name__ == "__main__":
+    # โหลดตัวแปรจาก .env
+    load_dotenv()
+    channel_secret = os.getenv("CHANNEL_SECRET")
+    channel_access_token = os.getenv("CHANNEL_ACCESS_TOKEN")
+    
+    init(channel_secret, channel_access_token)
+    setup_handler()
+          
     app.run()
-
