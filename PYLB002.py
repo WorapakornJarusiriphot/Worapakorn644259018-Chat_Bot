@@ -1,14 +1,18 @@
 from flask import Flask, request
+from dotenv import load_dotenv
+import os
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import (MessageEvent,
                             TextMessage,
                             TextSendMessage)
 
-channel_secret = "bd64f7ffb48f1aada1527ee852c4fda0"
-channel_access_token = "RrewYzqHmm7KSmeVPPowpWx44BrF1ABUhMxaFvb2wwPlLf/Ct6M0w+mQpZBOkTt5RxwtW0jUmT97K1JTKn7vW968Qdgo3btfXw425HYFsaanXy/YcqXSRMePK8r4pdCi6b6GkoSNfTQz8guUo69iuAdB04t89/1O/w1cDnyilFU="
+line_bot_api = None
+handler = None
 
-line_bot_api = LineBotApi(channel_access_token)
-handler = WebhookHandler(channel_secret)
+def init(secret, token):
+    global line_bot_api, handler
+    line_bot_api = LineBotApi(token)
+    handler = WebhookHandler(secret)
 
 app = Flask(__name__)
 
@@ -18,29 +22,36 @@ def home():
         signature = request.headers["X-Line-Signature"]
         body = request.get_data(as_text=True)
         handler.handle(body, signature)
-    except:
-        pass
+    except Exception as e:
+        print(f"Error: {e}")
     
     return "Hello Line Chatbot"
 
-@handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     text = event.message.text
     print(text)
-    #print(event)
     
     if text == "สวัสดี":
         text_out = "ยินดีที่ได้รู้จักครับ"
-        line_bot_api.reply_message(event.reply_token,
-                                   TextSendMessage(text=text_out))
-        #line_bot_api.push_message("xxxxxxx",
-        #                           TextSendMessage(text=text_out))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_out))
                 
-    if text == "ชื่ออะไร":
+    elif text == "ชื่ออะไร":
         text_out = "สายฟ้าครับ"
-        line_bot_api.reply_message(event.reply_token,
-                                   TextSendMessage(text=text_out))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_out))
 
-if __name__ == "__main__":          
+def setup_handler():
+    handler.add(MessageEvent, message=TextMessage)(handle_text_message)
+
+
+def setup_handler():
+    handler.add(MessageEvent, message=TextMessage)(handle_text_message)
+
+if __name__ == "__main__":
+    # โหลดตัวแปรจาก .env
+    load_dotenv()
+    channel_secret = os.getenv("CHANNEL_SECRET")
+    channel_access_token = os.getenv("CHANNEL_ACCESS_TOKEN")
+    
+    init(channel_secret, channel_access_token)
+    setup_handler()
     app.run()
-
