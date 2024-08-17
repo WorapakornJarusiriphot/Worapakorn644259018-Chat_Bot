@@ -1,4 +1,6 @@
-from flask import Flask, request, send_from_directory
+from flask import Flask, request, send_from_directory  # แก้ไขตรงนี้
+from dotenv import load_dotenv
+import os
 from werkzeug.middleware.proxy_fix import ProxyFix
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import (MessageEvent,
@@ -8,14 +10,16 @@ from linebot.models import (MessageEvent,
                             ImageSendMessage)
 from wit import Wit
 
-channel_secret = "bd64f7ffb48f1aada1527ee852c4fda0"
-channel_access_token = "RrewYzqHmm7KSmeVPPowpWx44BrF1ABUhMxaFvb2wwPlLf/Ct6M0w+mQpZBOkTt5RxwtW0jUmT97K1JTKn7vW968Qdgo3btfXw425HYFsaanXy/YcqXSRMePK8r4pdCi6b6GkoSNfTQz8guUo69iuAdB04t89/1O/w1cDnyilFU="
+line_bot_api = None
+handler = None
 
 wit_access_token = "xxx"
 client = Wit(wit_access_token)
 
-line_bot_api = LineBotApi(channel_access_token)
-handler = WebhookHandler(channel_secret)
+def init(secret, token):
+    global line_bot_api, handler
+    line_bot_api = LineBotApi(token)
+    handler = WebhookHandler(secret)
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1, x_proto=1)
@@ -31,7 +35,7 @@ def home():
     
     return "Hello Line Chatbot"
 
-@handler.add(MessageEvent, message=TextMessage)
+
 def handle_text_message(event):
     text = event.message.text
     print(text)
@@ -83,6 +87,18 @@ def handle_text_message(event):
 def send_static_content(path):
     return send_from_directory('static', path)
             
-if __name__ == "__main__":          
+
+def setup_handler():
+    handler.add(MessageEvent, message=TextMessage)(handle_text_message)
+
+if __name__ == "__main__":
+    # โหลดตัวแปรจาก .env
+    load_dotenv()
+    channel_secret = os.getenv("CHANNEL_SECRET")
+    channel_access_token = os.getenv("CHANNEL_ACCESS_TOKEN")
+    
+    init(channel_secret, channel_access_token)
+    setup_handler()
+          
     app.run()
 
