@@ -5,6 +5,15 @@ from linebot import LineBotApi, WebhookHandler
 # สร้างแอปพลิเคชัน Flask
 app = Flask(__name__)
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    # โค้ดที่ใช้จัดการ Webhook request
+    return "OK", 200
+
+def init(secret, token):
+    # Initialization code
+    pass
+
 # กำหนดตัวแปร line_bot_api และ handler
 line_bot_api = None
 handler = None

@@ -15,6 +15,15 @@ client = Wit(wit_access_token)
 # สร้างแอปพลิเคชัน Flask
 app = Flask(__name__)
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    # โค้ดที่ใช้จัดการ Webhook request
+    return "OK", 200
+
+def init(secret, token):
+    # Initialization code
+    pass
+
 def init(secret, token):
     """ ฟังก์ชัน init เพื่อให้สอดคล้องกับการเรียกใช้ใน main.py """
     global client

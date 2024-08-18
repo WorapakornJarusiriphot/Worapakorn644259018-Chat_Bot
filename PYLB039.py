@@ -23,6 +23,15 @@ def init(secret, token):
     handler = WebhookHandler(secret)
 
 app = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    # โค้ดที่ใช้จัดการ Webhook request
+    return "OK", 200
+
+def init(secret, token):
+    # Initialization code
+    pass
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1, x_proto=1)
 
 @app.route("/", methods=["GET","POST"])

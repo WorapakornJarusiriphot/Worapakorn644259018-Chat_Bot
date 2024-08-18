@@ -4,6 +4,15 @@ import GT
 # สร้างแอป Flask
 app = Flask(__name__)
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    # โค้ดที่ใช้จัดการ Webhook request
+    return "OK", 200
+
+def init(secret, token):
+    # Initialization code
+    pass
+
 # เรียกใช้ไลบรารี googletrans สำหรับการแปลภาษา
 @app.route('/')
 def home():
